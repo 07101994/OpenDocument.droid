@@ -1,5 +1,6 @@
 package at.tomtasche.reader.ui.activity;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.LinkedList;
 import java.util.List;
@@ -151,8 +152,14 @@ public abstract class DocumentActivity extends SherlockFragmentActivity
 		FileLoader fileLoader = (FileLoader) loader;
 		Throwable error = fileLoader.getLastError();
 		final Uri uri = fileLoader.getLastUri();
+
+		File file = null;
+		if (loader instanceof DocumentLoader) {
+			file = ((DocumentLoader) loader).getLastDocumentFile();
+		}
+
 		if (error != null) {
-			handleError(error, uri);
+			handleError(error, uri, file);
 		} else if (document != null) {
 			this.document = document;
 
@@ -240,7 +247,7 @@ public abstract class DocumentActivity extends SherlockFragmentActivity
 		}
 	}
 
-	public void handleError(Throwable error, final Uri uri) {
+	public void handleError(Throwable error, final Uri uri, File file) {
 		Log.e("OpenDocument Reader", "Error opening file at " + uri.toString(),
 				error);
 
@@ -323,7 +330,7 @@ public abstract class DocumentActivity extends SherlockFragmentActivity
 				|| uri.toString().endsWith(".ots")
 				|| uri.toString().endsWith(".odp")
 				|| uri.toString().endsWith(".otp"))
-			ReportUtil.submitFile(this, error, uri, errorDescription);
+			ReportUtil.submitFile(this, error, uri, file, errorDescription);
 	}
 
 	public void addLoadingListener(LoadingListener loadingListener) {

@@ -9,7 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.net.Uri;
+import android.provider.MediaStore;
 import android.support.v4.content.AsyncTaskLoader;
 import at.andiwand.commons.lwxml.writer.LWXMLMultiWriter;
 import at.andiwand.commons.lwxml.writer.LWXMLStreamWriter;
@@ -42,6 +44,7 @@ public class DocumentLoader extends AsyncTaskLoader<Document> implements
 	private String password;
 	private Document document;
 	private DocumentTranslator<?> translator;
+	private TemporaryOpenDocumentFile documentFile;
 
 	// support File parameter too (saves us from copying the file
 	// unnecessarily)!
@@ -73,6 +76,10 @@ public class DocumentLoader extends AsyncTaskLoader<Document> implements
 	@Override
 	public Uri getLastUri() {
 		return uri;
+	}
+
+	public File getLastDocumentFile() {
+		return documentFile.getFile();
 	}
 
 	@Override
@@ -118,7 +125,7 @@ public class DocumentLoader extends AsyncTaskLoader<Document> implements
 	@Override
 	public Document loadInBackground() {
 		InputStream stream = null;
-		TemporaryOpenDocumentFile documentFile = null;
+		documentFile = null;
 		try {
 			// cleanup uri
 			if ("/./".equals(uri.toString().substring(0, 2))) {
@@ -138,9 +145,29 @@ public class DocumentLoader extends AsyncTaskLoader<Document> implements
 				stream = getContext().getContentResolver().openInputStream(uri);
 			}
 
+			String fileName = uri.getLastPathSegment();
+			Cursor cursor = null;
 			try {
-				RecentDocumentsUtil.addRecentDocument(getContext(),
-						uri.getLastPathSegment(), uri);
+				cursor = getContext().getContentResolver().query(uri,
+						new String[] { MediaStore.MediaColumns.DISPLAY_NAME },
+						null, null, null);
+				cursor.moveToFirst();
+
+				int fileNameColumnId = cursor
+						.getColumnIndex(MediaStore.MediaColumns.DISPLAY_NAME);
+				if (fileNameColumnId >= 0)
+					fileName = cursor.getString(fileNameColumnId);
+			} catch (Exception e) {
+				// not a showstopper, so just continue
+				e.printStackTrace();
+			} finally {
+				if (cursor != null)
+					cursor.close();
+			}
+
+			try {
+				RecentDocumentsUtil.addRecentDocument(getContext(), fileName,
+						uri);
 			} catch (IOException e) {
 				// not a showstopper, so just continue
 				e.printStackTrace();

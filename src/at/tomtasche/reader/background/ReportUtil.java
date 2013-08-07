@@ -1,5 +1,6 @@
 package at.tomtasche.reader.background;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -52,7 +53,7 @@ public class ReportUtil {
 	}
 
 	public static void submitFile(final Context context, final Throwable error,
-			final Uri uri, final int errorDescription) {
+			final Uri uri, File file, final int errorDescription) {
 		AlertDialog.Builder builder = new AlertDialog.Builder(context);
 		builder.setTitle(R.string.toast_error_generic);
 		builder.setMessage(context.getString(errorDescription)
@@ -76,13 +77,15 @@ public class ReportUtil {
 				Bundle bundle = new Bundle();
 				bundle.putStringArray(Intent.EXTRA_EMAIL,
 						new String[] { "tickets@opendocument.uservoice.com" });
+				
+				// TODO: attach file
 				bundle.putParcelable(Intent.EXTRA_STREAM, uri);
 
 				String version;
 				try {
 					version = context.getPackageManager().getPackageInfo(
 							context.getPackageName(), 0).versionName;
-				} catch (NameNotFoundException e1) {
+				} catch (NameNotFoundException e) {
 					version = "unknown";
 				}
 				bundle.putString(Intent.EXTRA_SUBJECT, "OpenDocument Reader ("
